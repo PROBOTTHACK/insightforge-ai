@@ -1,6 +1,6 @@
 import { Upload } from "lucide-react";
 import { useRef } from "react";
-import { getDatasetSummary, uploadDataset } from "../../services/api";
+import { getApiErrorMessage, getDatasetSummary, uploadDataset } from "../../services/api";
 import { useDashboardStore } from "../../store/dashboardStore";
 
 export function DatasetUploader() {
@@ -18,7 +18,7 @@ export function DatasetUploader() {
       setDataset(dataset);
       setSummary(summary);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Upload failed.");
+      setError(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }

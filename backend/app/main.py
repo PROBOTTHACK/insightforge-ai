@@ -8,9 +8,16 @@ settings = get_settings()
 
 app = FastAPI(title=settings.app_name, version="0.1.0")
 
+allowed_origins = {
+    settings.frontend_origin,
+    "https://insightforge-ai-self.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+}
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin, "http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=list(allowed_origins),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

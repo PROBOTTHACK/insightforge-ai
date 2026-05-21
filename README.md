@@ -170,6 +170,8 @@ Set this environment variable in Vercel:
 VITE_API_BASE_URL=https://insightforge-ai-yycn.onrender.com
 ```
 
+If Vercel currently has `VITE_API_BASE_URL=http://localhost:8000`, remove it or replace it with the Render URL above, then redeploy. The production frontend also guards against localhost values and falls back to Render.
+
 Set these environment variables in Render:
 
 ```env

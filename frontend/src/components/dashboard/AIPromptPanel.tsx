@@ -1,5 +1,5 @@
 import { WandSparkles } from "lucide-react";
-import { generateDashboard } from "../../services/api";
+import { generateDashboard, getApiErrorMessage } from "../../services/api";
 import { useDashboardStore } from "../../store/dashboardStore";
 
 export function AIPromptPanel() {
@@ -12,7 +12,7 @@ export function AIPromptPanel() {
     try {
       setDashboard(await generateDashboard(dataset.id, prompt));
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Dashboard generation failed.");
+      setError(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }

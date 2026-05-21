@@ -3,6 +3,7 @@ services:
     build:
       context: ./backend
     environment:
+      ENVIRONMENT: development
       FRONTEND_ORIGIN: http://localhost:5173
     ports:
       - "8000:8000"
@@ -12,6 +13,7 @@ services:
     working_dir: /app
     command: sh -c "npm install && npm run dev"
     environment:
+      # Browser-based local Docker development should use the host-mapped backend port.
       VITE_API_BASE_URL: http://localhost:8000
     ports:
       - "5173:5173"
