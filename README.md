@@ -22,7 +22,7 @@
 
 <br/>
 
-[**Live Demo**](#) · [**API Docs**](http://localhost:8000/docs) · [**Report Bug**](#) · [**Request Feature**](#)
+[**Live Demo**](https://insightforge-ai-self.vercel.app/) · [**API Docs**](https://insightforge-ai-yycn.onrender.com/docs) · [**Report Bug**](#) · [**Request Feature**](#)
 
 <br/>
 
@@ -153,6 +153,45 @@ VITE_API_BASE_URL=http://localhost:8000
 ```
 
 When deploying the frontend, set the same `VITE_API_BASE_URL` value in the hosting provider environment variables.
+
+## Production Deployment
+
+Current deployed URLs:
+
+```text
+Frontend: https://insightforge-ai-self.vercel.app/
+Backend:  https://insightforge-ai-yycn.onrender.com
+API Docs: https://insightforge-ai-yycn.onrender.com/docs
+```
+
+Set this environment variable in Vercel:
+
+```env
+VITE_API_BASE_URL=https://insightforge-ai-yycn.onrender.com
+```
+
+Set these environment variables in Render:
+
+```env
+ENVIRONMENT=production
+FRONTEND_ORIGIN=https://insightforge-ai-self.vercel.app
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your_gemini_key
+GEMINI_MODEL=gemini-2.0-flash
+```
+
+If you want Hugging Face instead of Gemini on Render:
+
+```env
+ENVIRONMENT=production
+FRONTEND_ORIGIN=https://insightforge-ai-self.vercel.app
+AI_PROVIDER=huggingface
+HUGGINGFACE_API_KEY=your_hf_token
+HUGGINGFACE_MODEL=Qwen/Qwen2.5-7B-Instruct
+HUGGINGFACE_PROVIDER=auto
+```
+
+After changing Vercel or Render environment variables, redeploy that service so the new values are loaded.
 
 ## AI provider setup
 
