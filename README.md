@@ -31,6 +31,20 @@ npm run dev
 
 Open `http://localhost:5173`. The API runs at `http://localhost:8000`.
 
+If you want the frontend to use the deployed Render backend, create `frontend/.env`:
+
+```bash
+VITE_API_BASE_URL=https://insightforge-ai-yycn.onrender.com
+```
+
+For a local backend, use:
+
+```bash
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+When deploying the frontend, set the same `VITE_API_BASE_URL` value in the hosting provider environment variables.
+
 ## AI provider setup
 
 The backend supports three AI modes:
