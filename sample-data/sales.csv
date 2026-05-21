@@ -1,0 +1,13 @@
+date,region,product_category,revenue,orders,customers,churned
+2025-01-01,North,Software,124000,420,380,18
+2025-01-01,South,Services,98000,315,289,22
+2025-02-01,North,Software,138000,452,410,16
+2025-02-01,West,Hardware,86000,265,230,20
+2025-03-01,East,Services,112000,340,310,24
+2025-03-01,South,Software,146000,470,426,19
+2025-04-01,North,Hardware,91000,280,244,21
+2025-04-01,West,Software,158000,505,458,17
+2025-05-01,East,Software,173000,548,501,15
+2025-05-01,South,Services,119000,362,334,23
+2025-06-01,North,Software,192000,590,546,14
+2025-06-01,West,Services,126000,388,351,20
