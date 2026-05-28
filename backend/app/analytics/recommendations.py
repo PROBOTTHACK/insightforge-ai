@@ -2,54 +2,25 @@ from typing import Any
 
 import pandas as pd
 
+from app.analytics.chart_builder import build_chart
+from app.analytics.profiling import dimension_columns, metric_columns
 from app.models.schemas import ChartConfig, ColumnType
 
 
 def recommend_visualizations(df: pd.DataFrame, schema: dict[str, ColumnType]) -> list[ChartConfig]:
     charts: list[ChartConfig] = []
-    numeric = [column for column, kind in schema.items() if kind == "numerical"]
-    categorical = [column for column, kind in schema.items() if kind == "categorical"]
+    numeric = metric_columns(df, schema)
+    categorical = [column for column in dimension_columns(df, schema) if schema[column] == "categorical"]
     datetime = [column for column, kind in schema.items() if kind == "datetime"]
 
     if datetime and numeric:
         date_col, metric = datetime[0], numeric[0]
-        data = (
-            df.assign(__date=pd.to_datetime(df[date_col], errors="coerce"))
-            .dropna(subset=["__date"])
-            .set_index("__date")
-            .resample("ME")[metric]
-            .sum()
-            .reset_index()
-        )
-        data[date_col] = data["__date"].dt.strftime("%Y-%m")
-        charts.append(
-            ChartConfig(
-                chartType="line",
-                title=f"{metric} over time",
-                xAxis=date_col,
-                yAxis=metric,
-                data=data[[date_col, metric]].to_dict("records"),
-            )
-        )
+        data = df.assign(__month=pd.to_datetime(df[date_col], errors="coerce").dt.strftime("%Y-%m"))
+        charts.append(build_chart(data, {**schema, "__month": "categorical"}, "line", "__month", metric, "sum", f"{metric} over time"))
 
     if categorical and numeric:
         category, metric = categorical[0], numeric[0]
-        grouped = (
-            df.groupby(category)[metric]
-            .sum(numeric_only=True)
-            .sort_values(ascending=False)
-            .head(8)
-            .reset_index()
-        )
-        charts.append(
-            ChartConfig(
-                chartType="bar",
-                title=f"{metric} by {category}",
-                xAxis=category,
-                yAxis=metric,
-                data=grouped.to_dict("records"),
-            )
-        )
+        charts.append(build_chart(df, schema, "bar", category, metric, "sum", f"{metric} by {category}"))
 
     if numeric:
         metric = numeric[0]
@@ -98,7 +69,7 @@ def recommend_visualizations(df: pd.DataFrame, schema: dict[str, ColumnType]) ->
 
 
 def top_kpis(df: pd.DataFrame, schema: dict[str, ColumnType]) -> list[dict[str, Any]]:
-    numeric = [column for column, kind in schema.items() if kind == "numerical"]
+    numeric = metric_columns(df, schema)
     kpis: list[dict[str, Any]] = [
         {"title": "Rows", "value": f"{len(df):,}", "tone": "neutral"},
         {"title": "Columns", "value": f"{len(df.columns):,}", "tone": "neutral"},

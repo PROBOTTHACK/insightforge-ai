@@ -6,6 +6,19 @@ from pydantic import BaseModel, Field, HttpUrl
 ColumnType = Literal["numerical", "categorical", "boolean", "datetime", "text"]
 WidgetType = Literal["kpi", "chart", "table", "filter"]
 ChartType = Literal["bar", "horizontal_bar", "line", "histogram", "heatmap", "pie", "scatter"]
+AggregationType = Literal["sum", "mean", "count", "min", "max", "none"]
+ColumnRole = Literal["metric", "dimension", "identifier", "timestamp", "text"]
+
+
+class ColumnProfile(BaseModel):
+    name: str
+    type: ColumnType
+    role: ColumnRole
+    uniqueValues: int
+    missingValues: int
+    recommendedForKpi: bool = False
+    recommendedForAxis: bool = False
+    warning: str | None = None
 
 
 class DatasetMetadata(BaseModel):
@@ -15,6 +28,7 @@ class DatasetMetadata(BaseModel):
     rows: int
     columns: int
     column_schema: dict[str, ColumnType] = Field(alias="schema_json")
+    column_profiles: list[ColumnProfile] = Field(default_factory=list, alias="column_profiles")
     preview: list[dict[str, Any]]
 
 
@@ -37,6 +51,8 @@ class ChartConfig(BaseModel):
     title: str
     xAxis: str | None = None
     yAxis: str | None = None
+    aggregation: AggregationType = "sum"
+    insight: str | None = None
     data: list[dict[str, Any]] = Field(default_factory=list)
 
 
@@ -74,6 +90,28 @@ class DashboardConfig(BaseModel):
 class DashboardPromptRequest(BaseModel):
     datasetId: str
     prompt: str
+
+
+class CustomChartRequest(BaseModel):
+    datasetId: str
+    chartType: ChartType
+    xAxis: str | None = None
+    yAxis: str | None = None
+    aggregation: AggregationType = "sum"
+    title: str | None = None
+
+
+class DashboardAskRequest(BaseModel):
+    datasetId: str
+    question: str
+    dashboard: DashboardConfig | None = None
+    selectedWidgetIndexes: list[int] = Field(default_factory=list)
+
+
+class DashboardAskResponse(BaseModel):
+    answer: str
+    usedWidgets: list[str] = Field(default_factory=list)
+    usedColumns: list[str] = Field(default_factory=list)
 
 
 class DatasetSummary(BaseModel):

@@ -195,6 +195,45 @@ HUGGINGFACE_PROVIDER=auto
 
 After changing Vercel or Render environment variables, redeploy that service so the new values are loaded.
 
+## Manual Dashboard Control
+
+The app supports both AI-generated dashboards and manual chart building.
+
+Manual controls let users choose:
+
+- chart type: bar, horizontal bar, line, pie, histogram, scatter
+- X axis column
+- Y metric column
+- aggregation: sum, mean, count, min, max, none
+- custom chart title
+
+The backend profiles each column before recommending metrics. Columns that look like identifiers, such as `id`, `postal_code`, `zip`, `phone`, or `account_number`, are not used for KPI totals. They can still be used as chart axes when the user explicitly chooses them.
+
+Prompt examples that now work:
+
+```text
+plot revenue with region
+plot revenue with postal code as bar chart
+show average order value by country
+make a scatter chart of revenue and orders
+```
+
+Each chart can include a generated insight. Dashboards can be exported by using the `Export PDF` button, which opens the browser print dialog with a print-optimized dashboard layout.
+
+## Dashboard Q&A
+
+Users can select one or more dashboard widgets and ask questions about them. Typing `@` in the dashboard chat opens a widget dropdown, so the answer can be grounded in specific charts, KPIs, or tables.
+
+The backend RAG endpoint is:
+
+```text
+POST /dashboard/ask
+```
+
+It retrieves context from the uploaded pandas dataset, detected column profiles, dataset statistics, selected widget data, and row samples. Gemini or Hugging Face generates the final answer when configured; otherwise the app returns a local grounded fallback. Current persistence is still the MVP in-memory dataset store, so Supabase-backed retrieval should be wired when the Supabase phase is added.
+
+The app also includes a dark/light mode toggle in the sidebar.
+
 ## AI provider setup
 
 The backend supports three AI modes:

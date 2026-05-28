@@ -25,11 +25,11 @@ export function DatasetUploader() {
   }
 
   return (
-    <section id="upload" className="rounded-lg border border-slate-200 bg-white p-5">
+    <section id="upload" className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-normal">InsightForge AI</h1>
-          <p className="mt-1 max-w-2xl text-sm text-slate-600">
+          <h1 className="text-2xl font-semibold tracking-normal dark:text-slate-100">InsightForge AI</h1>
+          <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
             Upload a CSV, Excel, or JSON file and let the backend infer schema, generate analytics, and return renderable dashboard config.
           </p>
         </div>

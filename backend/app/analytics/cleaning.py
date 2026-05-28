@@ -29,8 +29,9 @@ def infer_column_types(df: pd.DataFrame) -> dict[str, ColumnType]:
             schema[column] = "datetime"
             continue
 
-        unique_ratio = series.nunique(dropna=True) / max(len(series), 1)
-        schema[column] = "categorical" if unique_ratio <= 0.35 else "text"
+        unique_count = series.nunique(dropna=True)
+        unique_ratio = unique_count / max(len(series), 1)
+        schema[column] = "categorical" if unique_count <= 20 or unique_ratio <= 0.5 else "text"
     return schema
 
 

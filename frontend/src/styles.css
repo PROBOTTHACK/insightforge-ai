@@ -15,3 +15,20 @@ body {
 * {
   box-sizing: border-box;
 }
+
+@media print {
+  aside,
+  #upload,
+  button,
+  textarea {
+    display: none !important;
+  }
+
+  main {
+    padding-left: 0 !important;
+  }
+
+  body {
+    background: white;
+  }
+}

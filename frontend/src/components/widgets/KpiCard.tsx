@@ -7,12 +7,12 @@ export function KpiCard({ widget }: { widget: KPIWidget }) {
   const toneClass = tone === "positive" ? "text-mint" : tone === "negative" ? "text-coral" : "text-slate-500";
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4">
+    <article className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-sm font-medium text-slate-500">{widget.title}</h3>
         <Icon className={toneClass} size={18} />
       </div>
-      <p className="mt-3 break-words text-2xl font-semibold">{widget.value}</p>
+      <p className="mt-3 break-words text-2xl font-semibold dark:text-slate-100">{widget.value}</p>
       {widget.delta ? <p className={`mt-2 text-xs font-medium ${toneClass}`}>{widget.delta}</p> : null}
     </article>
   );

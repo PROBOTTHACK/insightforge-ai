@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import pandas as pd
 
+from app.analytics.profiling import build_column_profiles
 from app.models.schemas import ColumnType, DatasetMetadata
 
 
@@ -25,6 +26,7 @@ class DatasetRecord:
             rows=int(self.dataframe.shape[0]),
             columns=int(self.dataframe.shape[1]),
             schema_json=self.schema_json,
+            column_profiles=build_column_profiles(self.dataframe, self.schema_json),
             preview=preview,
         )
 

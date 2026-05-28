@@ -1,4 +1,5 @@
 import { BarChart3, Database, Sparkles } from "lucide-react";
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 
 interface AppShellProps {
@@ -6,6 +7,11 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  useEffect(() => {
+    document.documentElement.classList.remove("dark");
+    localStorage.removeItem("theme");
+  }, []);
+
   return (
     <div className="min-h-screen bg-cloud text-ink">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white px-5 py-6 lg:block">

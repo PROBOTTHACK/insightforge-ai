@@ -1,8 +1,7 @@
 import axios from "axios";
-import type { DashboardConfig, DatasetMetadata, DatasetSummary } from "../types/dashboard";
+import type { AggregationType, ChartType, ChartWidget, DashboardAskResponse, DashboardConfig, DatasetMetadata, DatasetSummary } from "../types/dashboard";
 
 const DEPLOYED_API_BASE_URL = "https://insightforge-ai-yycn.onrender.com";
-const LOCAL_API_BASE_URL = "http://localhost:8000";
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const configuredApiIsLocal =
   configuredApiBaseUrl?.includes("localhost") || configuredApiBaseUrl?.includes("127.0.0.1");
@@ -10,9 +9,7 @@ const configuredApiIsLocal =
 export const API_BASE_URL =
   configuredApiBaseUrl && !(import.meta.env.PROD && configuredApiIsLocal)
     ? configuredApiBaseUrl
-    : import.meta.env.DEV
-      ? LOCAL_API_BASE_URL
-      : DEPLOYED_API_BASE_URL;
+    : DEPLOYED_API_BASE_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL
@@ -39,6 +36,28 @@ export async function generateDashboard(datasetId: string, prompt: string): Prom
     datasetId,
     prompt
   });
+  return data;
+}
+
+export async function buildCustomChart(input: {
+  datasetId: string;
+  chartType: ChartType;
+  xAxis?: string | null;
+  yAxis?: string | null;
+  aggregation: AggregationType;
+  title?: string | null;
+}): Promise<ChartWidget> {
+  const { data } = await api.post<ChartWidget>("/dashboard/custom-chart", input);
+  return data;
+}
+
+export async function askDashboard(input: {
+  datasetId: string;
+  question: string;
+  dashboard?: DashboardConfig;
+  selectedWidgetIndexes: number[];
+}): Promise<DashboardAskResponse> {
+  const { data } = await api.post<DashboardAskResponse>("/dashboard/ask", input);
   return data;
 }
 

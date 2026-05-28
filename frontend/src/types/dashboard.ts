@@ -1,5 +1,18 @@
 export type ColumnType = "numerical" | "categorical" | "boolean" | "datetime" | "text";
 export type ChartType = "bar" | "horizontal_bar" | "line" | "histogram" | "heatmap" | "pie" | "scatter";
+export type AggregationType = "sum" | "mean" | "count" | "min" | "max" | "none";
+export type ColumnRole = "metric" | "dimension" | "identifier" | "timestamp" | "text";
+
+export interface ColumnProfile {
+  name: string;
+  type: ColumnType;
+  role: ColumnRole;
+  uniqueValues: number;
+  missingValues: number;
+  recommendedForKpi: boolean;
+  recommendedForAxis: boolean;
+  warning?: string | null;
+}
 
 export interface DatasetMetadata {
   id: string;
@@ -8,6 +21,7 @@ export interface DatasetMetadata {
   rows: number;
   columns: number;
   schema_json: Record<string, ColumnType>;
+  column_profiles: ColumnProfile[];
   preview: Record<string, unknown>[];
 }
 
@@ -25,6 +39,8 @@ export interface ChartWidget {
   title: string;
   xAxis?: string | null;
   yAxis?: string | null;
+  aggregation?: AggregationType;
+  insight?: string | null;
   data: Record<string, unknown>[];
 }
 
@@ -57,4 +73,10 @@ export interface DatasetSummary {
   statistics: Record<string, unknown>;
   insights: string[];
   recommendedCharts: ChartWidget[];
+}
+
+export interface DashboardAskResponse {
+  answer: string;
+  usedWidgets: string[];
+  usedColumns: string[];
 }

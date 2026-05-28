@@ -1,6 +1,9 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from app.ai.dashboard_builder import generate_dashboard_from_prompt
+from app.ai.providers import interpret_chart_insight
+from app.ai.rag import ask_dashboard
+from app.analytics.chart_builder import build_chart
 from app.analytics.cleaning import detect_missing_values
 from app.analytics.insights import generate_insights
 from app.analytics.recommendations import recommend_visualizations
@@ -8,6 +11,9 @@ from app.analytics.statistics import generate_statistics
 from app.ingestion.parsers import dataframe_from_api, dataframe_from_upload
 from app.models.schemas import (
     ApiConnectorRequest,
+    CustomChartRequest,
+    DashboardAskRequest,
+    DashboardAskResponse,
     DashboardConfig,
     DashboardPromptRequest,
     DatasetMetadata,
@@ -97,6 +103,30 @@ def dataset_insights(dataset_id: str) -> list[str]:
 async def generate_dashboard(request: DashboardPromptRequest) -> DashboardConfig:
     record = _get_record(request.datasetId)
     return await generate_dashboard_from_prompt(record, request.prompt)
+
+
+@router.post("/dashboard/custom-chart")
+async def custom_chart(request: CustomChartRequest):
+    record = _get_record(request.datasetId)
+    chart = build_chart(
+        record.dataframe,
+        record.schema_json,
+        request.chartType,
+        request.xAxis,
+        request.yAxis,
+        request.aggregation,
+        request.title,
+    )
+    insight = await interpret_chart_insight(chart.model_dump())
+    if insight:
+        chart.insight = insight
+    return chart
+
+
+@router.post("/dashboard/ask", response_model=DashboardAskResponse)
+async def dashboard_ask(request: DashboardAskRequest) -> DashboardAskResponse:
+    record = _get_record(request.datasetId)
+    return await ask_dashboard(record, request)
 
 
 async def _store_upload(file: UploadFile) -> DatasetMetadata:
