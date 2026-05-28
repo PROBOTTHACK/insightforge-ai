@@ -25,6 +25,7 @@ async def ask_dashboard(record: DatasetRecord, request: DashboardAskRequest) -> 
             usedColumns=context["usedColumns"],
             sources=ai_answer.get("sources") or context["sourceTitles"],
             confidence=ai_answer.get("confidence", "medium"),
+            provider=ai_answer.get("provider", "ai"),
         )
 
     local = _local_answer(record.dataframe, request.question, context)
@@ -34,6 +35,7 @@ async def ask_dashboard(record: DatasetRecord, request: DashboardAskRequest) -> 
         usedColumns=context["usedColumns"],
         sources=context["sourceTitles"],
         confidence=local["confidence"],
+        provider="local",
     )
 
 
@@ -70,7 +72,16 @@ def _build_documents(record: DatasetRecord, request: DashboardAskRequest) -> lis
                 id=f"widget:{index}",
                 title=title,
                 text=_widget_text(index, widget),
-                metadata={"kind": "widget", "index": index, "columns": _columns_from_widgets([widget])},
+                metadata={
+                    "kind": "widget",
+                    "index": index,
+                    "columns": _columns_from_widgets([widget]),
+                    "chartType": widget.get("chartType"),
+                    "xAxis": widget.get("xAxis"),
+                    "yAxis": widget.get("yAxis"),
+                    "aggregation": widget.get("aggregation"),
+                    "data": widget.get("data") or widget.get("rows") or [],
+                },
             )
         )
 
@@ -143,6 +154,10 @@ def _column_stats(df: pd.DataFrame, column: str) -> dict[str, Any]:
 
 
 def _local_answer(df: pd.DataFrame, question: str, context: dict[str, Any]) -> dict[str, Any]:
+    chart_answer = _answer_from_retrieved_chart(question, context)
+    if chart_answer:
+        return chart_answer
+
     column = _target_column(df, question, context["usedColumns"])
     operation = _operation(question)
     if column and pd.api.types.is_numeric_dtype(df[column]):
@@ -161,10 +176,57 @@ def _local_answer(df: pd.DataFrame, question: str, context: dict[str, Any]) -> d
     if context["retrievedDocuments"]:
         best = context["retrievedDocuments"][0]
         return {
-            "answer": f"Based on {best['title']}: {best['text'][:350]}",
+            "answer": f"I found relevant context in {best['title']}, but I need a clearer metric or category to calculate a precise answer.",
             "confidence": "medium",
         }
     return {"answer": "I could not find enough retrieved dashboard context to answer that.", "confidence": "low"}
+
+
+def _answer_from_retrieved_chart(question: str, context: dict[str, Any]) -> dict[str, Any] | None:
+    lowered = question.lower()
+    wants_label = any(word in lowered for word in ["name", "which", "who", "category", "region", "product"])
+    operation = _operation(question)
+
+    for document in context["retrievedDocuments"]:
+        metadata = document.get("metadata", {})
+        if metadata.get("kind") != "widget":
+            continue
+        data = metadata.get("data") or []
+        x_axis = metadata.get("xAxis")
+        y_axis = metadata.get("yAxis")
+        if not data or not x_axis or not y_axis:
+            continue
+
+        rows = [
+            row for row in data
+            if isinstance(row, dict) and x_axis in row and y_axis in row and isinstance(row.get(y_axis), int | float)
+        ]
+        if not rows:
+            continue
+
+        if operation in {"max", "sum"} and any(word in lowered for word in ["maximum", "max", "highest", "largest", "top", "most"]):
+            row = max(rows, key=lambda item: float(item[y_axis]))
+            if wants_label:
+                return {
+                    "answer": f"The {x_axis} with the maximum {y_axis} is {row[x_axis]} ({float(row[y_axis]):,.2f}).",
+                    "confidence": "high",
+                }
+            return {"answer": f"The maximum {y_axis} is {float(row[y_axis]):,.2f}.", "confidence": "high"}
+
+        if any(word in lowered for word in ["minimum", "min", "lowest", "smallest"]):
+            row = min(rows, key=lambda item: float(item[y_axis]))
+            if wants_label:
+                return {
+                    "answer": f"The {x_axis} with the minimum {y_axis} is {row[x_axis]} ({float(row[y_axis]):,.2f}).",
+                    "confidence": "high",
+                }
+            return {"answer": f"The minimum {y_axis} is {float(row[y_axis]):,.2f}.", "confidence": "high"}
+
+        if any(word in lowered for word in ["total", "sum"]):
+            total = sum(float(row[y_axis]) for row in rows)
+            return {"answer": f"The displayed total {y_axis} is {total:,.2f}.", "confidence": "high"}
+
+    return None
 
 
 def _operation(question: str) -> str:

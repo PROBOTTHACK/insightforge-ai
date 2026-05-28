@@ -81,4 +81,5 @@ export interface DashboardAskResponse {
   usedColumns: string[];
   sources: string[];
   confidence: "low" | "medium" | "high";
+  provider: string;
 }

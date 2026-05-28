@@ -8,6 +8,7 @@ interface Message {
   content: string;
   sources?: string[];
   confidence?: string;
+  provider?: string;
 }
 
 export function DashboardChat() {
@@ -41,7 +42,8 @@ export function DashboardChat() {
           role: "assistant",
           content: response.answer,
           sources: response.sources,
-          confidence: response.confidence
+          confidence: response.confidence,
+          provider: response.provider
         }
       ]);
       setQuestion("");
@@ -84,7 +86,7 @@ export function DashboardChat() {
               <p>{message.content}</p>
               {message.role === "assistant" && message.sources?.length ? (
                 <p className="mt-2 text-xs text-slate-500">
-                  Sources: {message.sources.slice(0, 4).join(", ")} · Confidence: {message.confidence}
+                  Sources: {message.sources.slice(0, 4).join(", ")} · Confidence: {message.confidence} · Provider: {message.provider}
                 </p>
               ) : null}
             </div>

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from app.ai.dashboard_builder import generate_dashboard_from_prompt
-from app.ai.providers import interpret_chart_insight
 from app.ai.rag import ask_dashboard
 from app.analytics.chart_builder import build_chart
 from app.analytics.cleaning import detect_missing_values
@@ -117,9 +116,6 @@ async def custom_chart(request: CustomChartRequest):
         request.aggregation,
         request.title,
     )
-    insight = await interpret_chart_insight(chart.model_dump())
-    if insight:
-        chart.insight = insight
     return chart
 
 

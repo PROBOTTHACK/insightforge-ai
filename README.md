@@ -230,7 +230,7 @@ The backend RAG endpoint is:
 POST /dashboard/ask
 ```
 
-It retrieves context from the uploaded pandas dataset, detected column profiles, dataset statistics, selected widget data, and row samples. Gemini or Hugging Face generates the final answer when configured; otherwise the app returns a local grounded fallback. Current persistence is still the MVP in-memory dataset store, so Supabase-backed retrieval should be wired when the Supabase phase is added.
+It retrieves context from the uploaded pandas dataset, detected column profiles, dataset statistics, selected widget data, and row samples. Set `AI_PROVIDER=balanced` and provide both Gemini and Hugging Face keys to rotate between providers and fail over automatically. If both providers fail or rate-limit, the app returns a local grounded pandas/vector fallback. Current persistence is still the MVP in-memory dataset store, so Supabase-backed retrieval should be wired when the Supabase phase is added.
 
 The app also includes a dark/light mode toggle in the sidebar.
 

@@ -3,7 +3,7 @@ import re
 from app.analytics.chart_builder import build_chart
 from app.analytics.profiling import build_column_profiles
 from app.analytics.recommendations import recommend_visualizations, top_kpis
-from app.ai.providers import interpret_chart_insight, select_dashboard_plan
+from app.ai.providers import select_dashboard_plan
 from app.models.schemas import ChartConfig, DashboardConfig, DashboardWidget, KPIConfig, TableConfig
 from app.services.dataset_store import DatasetRecord
 
@@ -11,7 +11,6 @@ from app.services.dataset_store import DatasetRecord
 async def generate_dashboard_from_prompt(record: DatasetRecord, prompt: str) -> DashboardConfig:
     explicit_chart = _chart_from_explicit_prompt(record, prompt)
     if explicit_chart:
-        explicit_chart = await _with_ai_insight(explicit_chart)
         widgets = [
             *[KPIConfig(**item) for item in top_kpis(record.dataframe, record.schema_json)][:3],
             explicit_chart,
@@ -34,7 +33,6 @@ async def generate_dashboard_from_prompt(record: DatasetRecord, prompt: str) -> 
     if plan:
         selected = _widgets_from_plan(widgets, plan)
         if selected:
-            selected = await _with_ai_insights(selected)
             return DashboardConfig(
                 dashboardName=plan["dashboardName"],
                 datasetId=record.id,
@@ -42,7 +40,6 @@ async def generate_dashboard_from_prompt(record: DatasetRecord, prompt: str) -> 
             )
 
     dashboard = _local_dashboard(record, prompt)
-    dashboard.widgets = await _with_ai_insights(dashboard.widgets)
     return dashboard
 
 
@@ -160,23 +157,6 @@ def _preview_table(record: DatasetRecord) -> TableConfig:
         columns=list(record.dataframe.columns[:8]),
         rows=record.dataframe.head(8).where(record.dataframe.notnull(), None).to_dict("records"),
     )
-
-
-async def _with_ai_insights(widgets: list[DashboardWidget]) -> list[DashboardWidget]:
-    enhanced: list[DashboardWidget] = []
-    for widget in widgets:
-        if isinstance(widget, ChartConfig):
-            enhanced.append(await _with_ai_insight(widget))
-        else:
-            enhanced.append(widget)
-    return enhanced
-
-
-async def _with_ai_insight(chart: ChartConfig) -> ChartConfig:
-    insight = await interpret_chart_insight(chart.model_dump())
-    if insight:
-        chart.insight = insight
-    return chart
 
 
 def _title_from_prompt(prompt: str) -> str:

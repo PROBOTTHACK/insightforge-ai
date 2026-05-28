@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     frontend_origin: str = "http://localhost:5173"
     ai_provider: str = "local"
+    ai_provider_strategy: str = "fallback"
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-2.0-flash"
     huggingface_api_key: str | None = None

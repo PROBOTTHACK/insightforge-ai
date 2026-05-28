@@ -1,28 +1,27 @@
 import json
+from itertools import count
 from typing import Any
 
 import httpx
 
 from app.core.config import get_settings
 
+_provider_counter = count()
+
 
 async def select_dashboard_plan(prompt: str, dataset_context: dict[str, Any], candidates: list[dict[str, Any]]) -> dict[str, Any] | None:
-    settings = get_settings()
-    provider = settings.ai_provider.lower()
-
-    try:
-        if provider == "gemini" and settings.gemini_api_key:
-            return await _gemini_plan(prompt, dataset_context, candidates)
-        if provider == "huggingface" and settings.huggingface_api_key:
-            return await _huggingface_plan(prompt, dataset_context, candidates)
-    except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError):
-        return None
+    for provider in _provider_order():
+        try:
+            if provider == "gemini":
+                return await _gemini_plan(prompt, dataset_context, candidates)
+            if provider == "huggingface":
+                return await _huggingface_plan(prompt, dataset_context, candidates)
+        except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+            continue
     return None
 
 
 async def interpret_chart_insight(chart: dict[str, Any]) -> str | None:
-    settings = get_settings()
-    provider = settings.ai_provider.lower()
     prompt = json.dumps(
         {
             "task": "Write one concise business insight for this chart.",
@@ -45,19 +44,18 @@ async def interpret_chart_insight(chart: dict[str, Any]) -> str | None:
         default=str,
     )
 
-    try:
-        if provider == "gemini" and settings.gemini_api_key:
-            return await _gemini_text(prompt)
-        if provider == "huggingface" and settings.huggingface_api_key:
-            return await _huggingface_text(prompt)
-    except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError):
-        return None
+    for provider in _provider_order():
+        try:
+            if provider == "gemini":
+                return await _gemini_text(prompt)
+            if provider == "huggingface":
+                return await _huggingface_text(prompt)
+        except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+            continue
     return None
 
 
 async def answer_dashboard_question(question: str, context: dict[str, Any]) -> dict[str, Any] | None:
-    settings = get_settings()
-    provider = settings.ai_provider.lower()
     prompt = json.dumps(
         {
             "task": "Answer a dashboard question using only the provided retrieved context.",
@@ -80,16 +78,48 @@ async def answer_dashboard_question(question: str, context: dict[str, Any]) -> d
         default=str,
     )
 
-    try:
-        if provider == "gemini" and settings.gemini_api_key:
-            return _parse_answer_json(await _gemini_text(prompt, response_mime_type="application/json"))
-        if provider == "huggingface" and settings.huggingface_api_key:
-            return _parse_answer_json(
-                await _huggingface_text(prompt, system="You return only valid JSON. Do not include markdown.")
-            )
-    except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError):
-        return None
+    for provider in _provider_order():
+        try:
+            if provider == "gemini":
+                answer = _parse_answer_json(await _gemini_text(prompt, response_mime_type="application/json"))
+            elif provider == "huggingface":
+                answer = _parse_answer_json(
+                    await _huggingface_text(prompt, system="You return only valid JSON. Do not include markdown.")
+                )
+            else:
+                answer = None
+            if answer:
+                answer["provider"] = provider
+                return answer
+        except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+            continue
     return None
+
+
+def _provider_order() -> list[str]:
+    settings = get_settings()
+    available: list[str] = []
+    if settings.gemini_api_key:
+        available.append("gemini")
+    if settings.huggingface_api_key:
+        available.append("huggingface")
+
+    provider = settings.ai_provider.lower()
+    if provider == "local" or not available:
+        return []
+    if provider in {"gemini", "huggingface"}:
+        preferred = [item for item in available if item == provider]
+        fallback = [item for item in available if item != provider]
+        return [*preferred, *fallback]
+
+    strategy = settings.ai_provider_strategy.lower()
+    if provider == "balanced" or strategy == "balanced":
+        if len(available) <= 1:
+            return available
+        offset = next(_provider_counter) % len(available)
+        return [*available[offset:], *available[:offset]]
+
+    return available
 
 
 async def _gemini_plan(prompt: str, dataset_context: dict[str, Any], candidates: list[dict[str, Any]]) -> dict[str, Any] | None:

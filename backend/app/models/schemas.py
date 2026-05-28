@@ -114,6 +114,7 @@ class DashboardAskResponse(BaseModel):
     usedColumns: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
     confidence: Literal["low", "medium", "high"] = "medium"
+    provider: str = "local"
 
 
 class DatasetSummary(BaseModel):
