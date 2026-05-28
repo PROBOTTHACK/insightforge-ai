@@ -6,6 +6,8 @@ import { useDashboardStore } from "../../store/dashboardStore";
 interface Message {
   role: "user" | "assistant";
   content: string;
+  sources?: string[];
+  confidence?: string;
 }
 
 export function DashboardChat() {
@@ -33,7 +35,15 @@ export function DashboardChat() {
         dashboard,
         selectedWidgetIndexes
       });
-      setMessages([...nextMessages, { role: "assistant", content: response.answer }]);
+      setMessages([
+        ...nextMessages,
+        {
+          role: "assistant",
+          content: response.answer,
+          sources: response.sources,
+          confidence: response.confidence
+        }
+      ]);
       setQuestion("");
     } catch (error) {
       setError(getApiErrorMessage(error));
@@ -43,14 +53,14 @@ export function DashboardChat() {
   }
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+    <section className="rounded-lg border border-slate-200 bg-white p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-base font-semibold dark:text-slate-100">Ask this dashboard</h2>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Select widgets or type @ to choose widget context, then ask Gemini about the dashboard.</p>
+          <h2 className="text-base font-semibold">Ask this dashboard</h2>
+          <p className="mt-1 text-sm text-slate-600">Select widgets or type @ to choose widget context, then ask Gemini about the dashboard.</p>
         </div>
         {selectedWidgetIndexes.length ? (
-          <button className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-300" onClick={clearSelectedWidgets} type="button">
+          <button className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm text-slate-600" onClick={clearSelectedWidgets} type="button">
             <X size={15} />
             Clear
           </button>
@@ -70,23 +80,28 @@ export function DashboardChat() {
       <div className="mt-4 max-h-60 space-y-3 overflow-y-auto">
         {messages.length ? (
           messages.map((message, index) => (
-            <div className={`rounded-md px-3 py-2 text-sm ${message.role === "user" ? "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100" : "bg-mint/10 text-slate-700 dark:text-slate-200"}`} key={index}>
-              {message.content}
+            <div className={`rounded-md px-3 py-2 text-sm ${message.role === "user" ? "bg-slate-100 text-slate-800" : "bg-mint/10 text-slate-700"}`} key={index}>
+              <p>{message.content}</p>
+              {message.role === "assistant" && message.sources?.length ? (
+                <p className="mt-2 text-xs text-slate-500">
+                  Sources: {message.sources.slice(0, 4).join(", ")} · Confidence: {message.confidence}
+                </p>
+              ) : null}
             </div>
           ))
         ) : (
-          <p className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-            Try: “Why did this chart spike?” or “Compare the selected widgets.”
+          <p className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-500">
+            Try: "What is the total experience?" or "What is the maximum salary?"
           </p>
         )}
       </div>
 
       <div className="relative mt-4">
         {showMentions ? (
-          <div className="absolute bottom-12 left-0 z-10 max-h-52 w-full overflow-y-auto rounded-md border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          <div className="absolute bottom-12 left-0 z-10 max-h-52 w-full overflow-y-auto rounded-md border border-slate-200 bg-white p-2 shadow-lg">
             {dashboard?.widgets.map((widget, index) => (
               <button
-                className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100"
                 key={`${widget.type}-${index}`}
                 onClick={() => toggleSelectedWidget(index)}
                 type="button"
@@ -98,7 +113,7 @@ export function DashboardChat() {
         ) : null}
         <div className="flex gap-2">
           <input
-            className="h-11 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-mint/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            className="h-11 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-mint/20"
             disabled={!dataset}
             onChange={(event) => setQuestion(event.target.value)}
             onKeyDown={(event) => {

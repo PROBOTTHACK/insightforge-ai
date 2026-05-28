@@ -55,7 +55,7 @@ async def interpret_chart_insight(chart: dict[str, Any]) -> str | None:
     return None
 
 
-async def answer_dashboard_question(question: str, context: dict[str, Any]) -> str | None:
+async def answer_dashboard_question(question: str, context: dict[str, Any]) -> dict[str, Any] | None:
     settings = get_settings()
     provider = settings.ai_provider.lower()
     prompt = json.dumps(
@@ -66,8 +66,14 @@ async def answer_dashboard_question(question: str, context: dict[str, Any]) -> s
                 "If selected widgets are provided, prioritize them.",
                 "If the answer is not supported by context, say what information is missing.",
                 "Do not invent values.",
-                "Keep the answer under 120 words unless the user asks for detail.",
+                "Return JSON only in the requested shape.",
+                "Keep answer under 120 words unless the user asks for detail.",
             ],
+            "requiredJsonShape": {
+                "answer": "string",
+                "sources": ["retrieved source title"],
+                "confidence": "low | medium | high",
+            },
             "question": question,
             "retrievedContext": context,
         },
@@ -76,9 +82,11 @@ async def answer_dashboard_question(question: str, context: dict[str, Any]) -> s
 
     try:
         if provider == "gemini" and settings.gemini_api_key:
-            return await _gemini_text(prompt)
+            return _parse_answer_json(await _gemini_text(prompt, response_mime_type="application/json"))
         if provider == "huggingface" and settings.huggingface_api_key:
-            return await _huggingface_text(prompt)
+            return _parse_answer_json(
+                await _huggingface_text(prompt, system="You return only valid JSON. Do not include markdown.")
+            )
     except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError):
         return None
     return None
@@ -187,3 +195,24 @@ def _parse_plan(text: str) -> dict[str, Any] | None:
     if not isinstance(data.get("widgetIndexes"), list):
         return None
     return data
+
+
+def _parse_answer_json(text: str) -> dict[str, Any] | None:
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        start = text.find("{")
+        end = text.rfind("}")
+        if start == -1 or end == -1:
+            return None
+        data = json.loads(text[start : end + 1])
+
+    if not isinstance(data, dict) or not isinstance(data.get("answer"), str):
+        return None
+    sources = data.get("sources")
+    if not isinstance(sources, list):
+        sources = []
+    confidence = data.get("confidence")
+    if confidence not in {"low", "medium", "high"}:
+        confidence = "medium"
+    return {"answer": data["answer"], "sources": [str(source) for source in sources], "confidence": confidence}

@@ -112,6 +112,8 @@ class DashboardAskResponse(BaseModel):
     answer: str
     usedWidgets: list[str] = Field(default_factory=list)
     usedColumns: list[str] = Field(default_factory=list)
+    sources: list[str] = Field(default_factory=list)
+    confidence: Literal["low", "medium", "high"] = "medium"
 
 
 class DatasetSummary(BaseModel):

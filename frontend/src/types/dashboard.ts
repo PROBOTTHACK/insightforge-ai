@@ -79,4 +79,6 @@ export interface DashboardAskResponse {
   answer: string;
   usedWidgets: string[];
   usedColumns: string[];
+  sources: string[];
+  confidence: "low" | "medium" | "high";
 }
